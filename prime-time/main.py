@@ -1,5 +1,4 @@
-import dataclasses
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 import socketserver
 import socket
 import json
@@ -15,8 +14,8 @@ class DataIn:
 
     @classmethod
     def deserialize(cls, json_data):
-        fields = set(f.name for f in dataclasses.fields(cls))
-        return cls(**{k: v for k, v in json.loads(json_data).items() if k in fields})
+        f = set(f.name for f in fields(cls))
+        return cls(**{k: v for k, v in json.loads(json_data).items() if k in f})
 
     def __post_init__(self):
         if self.method != "isPrime":
