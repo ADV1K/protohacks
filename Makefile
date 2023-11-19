@@ -15,4 +15,7 @@ smoke-test-py:
 prime-time-py:
 	python prime-time/main.py
 
-.PHONY: ip smoke-test-go smoke-test-py prime-time-py
+means-to-an-end-py:
+	python means-to-an-end/main.py
+
+.PHONY: ip smoke-test-go smoke-test-py prime-time-py means-to-an-end-py

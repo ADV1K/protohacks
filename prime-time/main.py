@@ -52,7 +52,7 @@ def is_prime(number):
     return True
 
 
-class PrimeTimeHandler(socketserver.BaseRequestHandler):
+class TCPHandler(socketserver.BaseRequestHandler):
     def setup(self) -> None:
         print("Connected from", self.client_address)
 
@@ -90,7 +90,7 @@ class PrimeTimeHandler(socketserver.BaseRequestHandler):
 if __name__ == "__main__":
     socketserver.TCPServer.address_family = socket.AF_INET6
     socketserver.TCPServer.allow_reuse_address = True
-    server = socketserver.ThreadingTCPServer((HOST, PORT), PrimeTimeHandler)
+    server = socketserver.ThreadingTCPServer((HOST, PORT), TCPHandler)
 
     try:
         print("Listening on {}".format(server.server_address))
