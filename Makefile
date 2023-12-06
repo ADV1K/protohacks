@@ -21,4 +21,7 @@ means-to-an-end-py:
 unusual-database-program-py:
 	python unusual-database-program/main.py
 
-.PHONY: ip smoke-test-go smoke-test-py prime-time-py means-to-an-end-py unusual-database-program-py
+budget-chat-py:
+	python budget-chat/main.py
+
+.PHONY: ip smoke-test-go smoke-test-py prime-time-py means-to-an-end-py unusual-database-program-py budget-chat-py
