@@ -1,7 +1,7 @@
 help:
 	@echo "Current solutions:"
 	@ls -1 */* | sed "s;/main.;-;g" | sort | xargs -I {} echo "    - {}"
-	@echo "\nRun a solution:\n    make smoke-test-go"
+	@echo -e "\nRun a solution:\n    make smoke-test-go"
 
 ip:
 	curl icanhazip.com
