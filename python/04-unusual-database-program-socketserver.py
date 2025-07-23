@@ -1,15 +1,16 @@
-import socketserver
 import socket
-import time
+import socketserver
 
-HOST = ""
+from fastsocket import get_ip
+
+HOST = "::"
 PORT = 6969
 
-DATABASE = {"version": "Advik's UDP KV Store v0.0.1"}
+DATABASE = {"version": "Advik's UDP KV Store v0.1"}
 IMMUTABLE_KEYS = ("version",)
 
 
-class UDPHandler(socketserver.BaseRequestHandler):
+class KeyValueStoreServer(socketserver.BaseRequestHandler):
     def handle(self) -> None:
         message, sock = self.request
         message = message.decode("utf-8")
@@ -33,12 +34,14 @@ if __name__ == "__main__":
     socketserver.UDPServer.address_family = socket.AF_INET6
     socketserver.UDPServer.max_packet_size = 1000
     socketserver.UDPServer.allow_reuse_address = True
-    server = socketserver.ThreadingUDPServer((HOST, PORT), UDPHandler)
+    server = socketserver.ThreadingUDPServer((HOST, PORT), KeyValueStoreServer)
+
+    print(f"Listening on {PORT} at")
+    for ip in get_ip():
+        print(f"  => {ip}")
 
     try:
-        print(f"Listening on {server.server_address}")
         server.serve_forever()
     except KeyboardInterrupt:
-        print("Server is shutting down...")
-
+        print("bye.")
         server.server_close()

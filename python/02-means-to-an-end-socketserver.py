@@ -1,16 +1,18 @@
-from sys import stdout
-import socketserver
 import socket
+import socketserver
 import struct
+from sys import stdout
+from typing import Generator
 
-HOST = ""
+from fastsocket import get_ip
+
+HOST = "::"
 PORT = 6969
+CHUNK_SIZE = 4096
 
 INCOMING_MESSAGE_FORMAT = "!cii"  # ! = network byte order, c = char, i = int
 OUTGOING_MESSAGE_FORMAT = "!i"
 INCOMING_MESSAGE_SIZE = struct.calcsize(INCOMING_MESSAGE_FORMAT)
-
-print = stdout.write  # because print() is too slow for one of the tests
 
 
 class MessageType:
@@ -18,15 +20,15 @@ class MessageType:
     QUERY = b"Q"
 
 
-class TCPHandler(socketserver.BaseRequestHandler):
+class TimeseriesDatabaseServer(socketserver.BaseRequestHandler):
     def setup(self) -> None:
-        print(f"Connected from {self.client_address}\n")
+        stdout.write(f"Connected from {self.client_address}\n")
         self.db = {}
 
     def handle(self) -> None:
         for message in self.read_messages():
             message_type, num1, num2 = struct.unpack(INCOMING_MESSAGE_FORMAT, message)
-            print(f"<-- {message_type} {num1} {num2}\n")
+            stdout.write(f"<-- {message_type} {num1} {num2}\n")
             match message_type:
                 case MessageType.INSERT:
                     self.handle_insert(num1, num2)
@@ -43,13 +45,13 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 total += price
                 count += 1
         mean = int(total / count if count else 0)
-        print(f"--> {mean}\n")
+        stdout.write(f"--> {mean}\n")
         self.request.sendall(struct.pack(OUTGOING_MESSAGE_FORMAT, mean))
 
-    def read_messages(self) -> bytes:
+    def read_messages(self) -> Generator[bytes]:
         data = b""
         while True:
-            data += self.request.recv(1024)
+            data += self.request.recv(CHUNK_SIZE)
             if not data:  # client disconnected
                 break
 
@@ -59,18 +61,21 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 yield message
 
     def finish(self) -> None:
-        print(f"Disconnected from {self.client_address}\n")
+        stdout.write(f"Disconnected from {self.client_address}\n")
         self.request.close()
 
 
 if __name__ == "__main__":
     socketserver.TCPServer.address_family = socket.AF_INET6
     socketserver.TCPServer.allow_reuse_address = True
-    server = socketserver.ThreadingTCPServer((HOST, PORT), TCPHandler)
+    server = socketserver.ThreadingTCPServer((HOST, PORT), TimeseriesDatabaseServer)
+
+    print(f"Listening on {PORT} at")
+    for ip in get_ip():
+        print(f"  => {ip}")
 
     try:
-        print(f"Listening on {server.server_address}\n")
         server.serve_forever()
     except KeyboardInterrupt:
-        print("Server is shutting down...")
+        print("bye.")
         server.server_close()

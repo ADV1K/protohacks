@@ -1,10 +1,14 @@
-from dataclasses import dataclass, fields
-import socketserver
-import socket
 import json
+import socket
+import socketserver
+from dataclasses import dataclass, fields
+from typing import Generator
 
-HOST = ""
+from fastsocket import get_ip
+
+HOST = "::"
 PORT = 6969
+CHUNK_SIZE = 4096
 
 
 @dataclass
@@ -33,6 +37,41 @@ class DataOut:
         return json.dumps(self.__dict__) + "\n"
 
 
+class PrimeTimeServer(socketserver.BaseRequestHandler):
+    def setup(self) -> None:
+        print("Connected from", self.client_address)
+
+    def handle(self) -> None:
+        for message in self.read_messages():
+            try:
+                data_in = DataIn.deserialize(message)
+            except (json.JSONDecodeError, ValueError, TypeError):
+                self.send_message("Invalid Request\n")
+            else:
+                data_out = DataOut(prime=is_prime(data_in.number)).serialize()
+                self.send_message(data_out)
+
+    def read_messages(self, delimiter: str = "\n") -> Generator[str]:
+        data = ""
+        while True:
+            data += self.request.recv(CHUNK_SIZE).decode("utf-8")
+            if not data:  # client disconnected
+                break
+
+            while delimiter in data:
+                message, data = data.split(delimiter, 1)
+                print("<-- ", message)
+                yield message
+
+    def send_message(self, message: str):
+        print("--> ", message.strip())
+        self.request.sendall(message.encode())
+
+    def finish(self) -> None:
+        print("Disconnected from", self.client_address)
+        self.request.close()
+
+
 def is_prime(number):
     # It works by looking at all numbers of the form 6k ± 1, up to sqrt(n), where k is any integer.
     # Or you can just use the following regex if you're a masochist:
@@ -52,49 +91,17 @@ def is_prime(number):
     return True
 
 
-class TCPHandler(socketserver.BaseRequestHandler):
-    def setup(self) -> None:
-        print("Connected from", self.client_address)
-
-    def handle(self) -> None:
-        for message in self.read_messages():
-            try:
-                data_in = DataIn.deserialize(message)
-            except (json.JSONDecodeError, ValueError, TypeError) as e:
-                self.send_message("Invalid Request\n")
-            else:
-                data_out = DataOut(prime=is_prime(data_in.number)).serialize()
-                self.send_message(data_out)
-
-    def read_messages(self, delimiter: str = "\n") -> str:
-        data = ""
-        while True:
-            data += self.request.recv(1024).decode("utf-8")
-            if not data:  # client disconnected
-                break
-
-            while delimiter in data:
-                message, data = data.split(delimiter, 1)
-                print("<-- ", message)
-                yield message
-
-    def send_message(self, message: str):
-        print("--> ", message.strip())
-        self.request.sendall(message.encode())
-
-    def finish(self) -> None:
-        print("Disconnected from", self.client_address)
-        self.request.close()
-
-
 if __name__ == "__main__":
     socketserver.TCPServer.address_family = socket.AF_INET6
     socketserver.TCPServer.allow_reuse_address = True
-    server = socketserver.ThreadingTCPServer((HOST, PORT), TCPHandler)
+    server = socketserver.ThreadingTCPServer((HOST, PORT), PrimeTimeServer)
+
+    print(f"Listening on {PORT} at")
+    for ip in get_ip():
+        print(f"  => {ip}")
 
     try:
-        print("Listening on {}".format(server.server_address))
         server.serve_forever()
     except KeyboardInterrupt:
-        print("Server is shutting down...")
+        print("bye.")
         server.server_close()
