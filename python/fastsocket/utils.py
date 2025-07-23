@@ -16,7 +16,7 @@ def get_public_ip():
     return ipv4, ipv6
 
 
-def get_ip(local=False):
+def get_ip(local=False) -> set[str]:
     # FIX: Does not work with Tailscale IPs, 100.97.164.37
     addresses = set()
     for entry in socket.getaddrinfo(socket.gethostname(), None):
