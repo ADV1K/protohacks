@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from fastsocket import BaseModel, FastTCP
+from fastsocket import FastTCP, Struct
 
 
 @dataclass
-class Message(BaseModel):
+class Message(Struct):
     message: str
 
     @classmethod

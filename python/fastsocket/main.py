@@ -22,22 +22,16 @@ FUTURE SCOPE:
 """
 
 
-class BaseModel:
-    def to_bytes(self) -> bytes:
-        raise NotImplementedError
-
-    @classmethod
-    def from_bytes(cls, data: bytes) -> "BaseModel":
-        raise NotImplementedError
-
-
 class FastTCP:
     def __init__(self, host: str = HOST, port: int = PORT):
         self.host = host
         self.port = port
 
     def handler(
-        self, request_size: int | None = None, request_delimiter: bytes | None = None
+        self,
+        model,
+        request_size: int | None = None,
+        request_delimiter: bytes | None = None,
     ):
         def decorator(func: Callable):
             self.handler_func = func
@@ -57,8 +51,13 @@ class FastTCP:
 
         return decorator
 
+    def parser(self) -> Callable: ...
+
     def run(self):
-        asyncio.run(self._start_server())
+        try:
+            asyncio.run(self._start_server())
+        except KeyboardInterrupt:
+            print("bye.")
 
     async def _start_server(self):
         sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
