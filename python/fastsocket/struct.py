@@ -1,12 +1,29 @@
 import re
 import struct
-from typing import Any, ClassVar, Self, Type, TypeVar, get_args, get_origin
+from typing import Any, ClassVar, Self, Type, TypedDict, TypeVar, get_args, get_origin
 
 T = TypeVar("T", bound="Struct")
+
+"""
+Issues:
+    1. cannot decode because we don't known the length of dynamic types, to create the struct. in short, struct won't work, need manual byte decoding.
+    2. list of strings doesn't work.
+"""
 
 
 class StructMeta(type):
     def __new__(mcs, name, bases, namespace):
+        # load config class
+        # config_obj: StructConfig = namespace.get("Config")
+        # config = {}
+        # if config_obj:
+        #     config = {
+        #         key: getattr(config_obj, key)
+        #         for key in StructConfig.__annotations__
+        #         if hasattr(config_obj, key)
+        #     }
+        # namespace["config"] = cast(StructConfig, config)
+
         annotations = namespace.get("__annotations__", {})
         model_defaults = {
             k: v
@@ -89,7 +106,7 @@ class Struct(metaclass=StructMeta):
 
     def __new__(cls: type[Self], **data: Any) -> Self: ...
     @property
-    def model_struct(self: "Struct") -> struct.Struct: ...
+    def model_struct(self: Self) -> struct.Struct: ...
 
     def encode(self: "Struct") -> bytes:
         values = []
@@ -124,6 +141,18 @@ class Struct(metaclass=StructMeta):
                 idx += 1
 
         return cls(**values)
+
+
+class StructConfig(TypedDict, total=False):
+    """
+    Config dict for Struct
+
+    Attributes:
+        message_type (StructValue): A custom value to prepend in front of each struct
+    """
+
+    ...
+    # message_type: StructValue
 
 
 class StructValue:

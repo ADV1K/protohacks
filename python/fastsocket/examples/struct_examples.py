@@ -40,7 +40,7 @@ class Iterables(Struct):
 class Other(Struct):
     default_value: u8 = u8(0x20)
     empty_string: str = ""  # takes one byte
-    empty_list_of_strings: list[str] = []  # takes one byte
+    # empty_list_of_strings: list[str] = []  # takes one byte
 
 
 numbers = Numbers(
@@ -67,4 +67,7 @@ iterables = Iterables(
 other = Other(empty_string="a")  # all defaults
 
 for x in (numbers, iterables, other):
+    # encoded = x.encode()
+    # decoded = x.__class__.decode(encoded)
+    # assert x == decoded, x
     print_hex(x)
